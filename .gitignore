@@ -1,0 +1,20 @@
+# operating system-related files
+*.DS_Store #file properties cache/storage on macOS
+Thumbs.db #thumbnail cache on Windows
+
+### vscode ###
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# Datasets folder
+datasets/*
+
+# Images output folder
+output/*
+
+# caches
+src/__pycache__/*
