@@ -53,7 +53,7 @@ def generate_images(files_dir: str, gdf_file: str, output_folder: str):
     gdf_file_full_path = f'{files_dir}/{gdf_file}'
     log(f'Started {gdf_file_full_path}...')
     gdf = GDF(file_path=gdf_file_full_path, valid_cue_descriptions=[DESCRIPTION_CUE_LEFT, DESCRIPTION_CUE_RIGHT], cue_map=LABELS_DICTIONARY)
-    gdf.generate_images(output_folder=output_folder)
+    gdf.generate_images(output_folder=output_folder, generate_intermediate_images=False, generate_difference_images=False)
     # number_processed_files += 1
     log(f'Finished {gdf_file_full_path}!')
 
