@@ -1,7 +1,6 @@
 from multiprocessing import Process
 from GDF import GDF
 from Logger import log
-from datetime import datetime
 import os
 
 DESCRIPTION_EYES_OPEN = 276
