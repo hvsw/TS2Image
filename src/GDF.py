@@ -43,7 +43,7 @@ class GDF:
         is_valid = description_int in self.valid_cue_descriptions
         return is_valid
 
-    def _generate_image_name(annotation_index: int, channel_index: int = None):
+    def _generate_image_name(self, annotation_index: int, channel_index: int = None):
         raw_file_name = self.file_path.split('/')[-1]
         file_name_components = [raw_file_name, 'Ann', annotation_index]
         if not channel_index is None:
@@ -54,8 +54,29 @@ class GDF:
         
         return image_file_name
 
+    def _save_image(self, image_folder, image_file_name, image):
+        all_cmaps = {
+            'Perceptually Uniform Sequential' : ['viridis', 'plasma', 'inferno', 'magma', 'cividis'],
+            'Sequential' : ['Greys', 'Purples', 'Blues', 'Greens', 'Oranges', 'Reds', 'YlOrBr', 'YlOrRd', 
+                            'OrRd', 'PuRd', 'RdPu', 'BuPu', 'GnBu', 'PuBu', 'YlGnBu', 'PuBuGn', 'BuGn', 'YlGn']
+        }
+
+        default = 'viridis'
+        cmaps_selected = [default]
+        for cmap_type, cmaps in all_cmaps.items():
+            for cmap in cmaps:
+                if cmap in cmaps_selected:
+                    final_image_folder = f'{image_folder}/{cmap_type}/{cmap}'
+                    if not os.path.exists(final_image_folder):
+                        os.makedirs(final_image_folder)
+        
+                    image_path = f'{final_image_folder}/{image_file_name}.png'
+                    plt.imsave(image_path, image, cmap=cmap)
+
     # TODO: Is there a way to declare `gaf` type to `pyts.image.GramianAngularField`?
-    def _generate_image(self, gaf, output_folder: str, cue_human_readable: str, cue_samples: pd.DataFrame, n_timestamps: int, image_file_name: str, generate_intermediate_images: bool):
+    def _generate_image(self, gaf, output_folder: str, cue_human_readable: str, 
+                        cue_samples: pd.DataFrame, n_timestamps: int, image_file_name: str, 
+                        generate_intermediate_images: bool = False):
         # Generate Garmian Angular Field
         # Summation
         image_folder = f'{output_folder}/{gaf.method}/{cue_human_readable}'
@@ -65,30 +86,34 @@ class GDF:
         
         # Reshape to reduce 1 dimension, making it a taller matrix aka stacking vertically all images
         # https://github.com/johannfaouzi/pyts/issues/95#issuecomment-809177142
-        stacked_image = cue_samples_gaf.reshape(-1, n_timestamps) 
+        stacked_image = cue_samples_gaf.reshape(-1, n_timestamps)
         
-        image_path = f'{image_folder}/{image_file_name}'
-        plt.imsave(image_path, stacked_image)
-
+        self._save_image(image_folder, image_file_name, stacked_image)
+        
+        # TODO: generate_intermediate_images is coming as False but we're passing True in _generate_image_from_annotation
         if generate_intermediate_images:
             channel_index = 0
             for img in cue_samples_gaf:
-                plt.imsave(f'{image_path}/Ch-{channel_index}-{image_file_name}', img)
+                intermediate_image_file_name = f"{image_file_name}-Ch-{channel_index}"
+                self._save_image(image_folder, intermediate_image_file_name, img)
                 channel_index += 1
 
-    def _generate_image_from_annotation(self, annotation, gasf, gadf, output_folder: str, cue_human_readable: str, cue_samples: pd.DataFrame, n_timestamps: int, image_file_name: str, generate_intermediate_images: bool, generate_difference_images: bool):
+    def _generate_image_from_annotation(self, annotation, gasf, gadf, output_folder: str, 
+                                        cue_human_readable: str, cue_samples: pd.DataFrame, 
+                                        n_timestamps: int, image_file_name: str, 
+                                        generate_intermediate_images: bool = False, generate_difference_images: bool = False):
         log(f'Generating summation image ({image_file_name})...')
         self._generate_image(gaf=gasf, output_folder=output_folder, cue_human_readable=cue_human_readable, 
-                                cue_samples=cue_samples, n_timestamps=n_timestamps, image_file_name=image_file_name, 
-                                generate_intermediate_images=generate_intermediate_images)
+                             cue_samples=cue_samples, n_timestamps=n_timestamps, image_file_name=image_file_name,
+                             generate_intermediate_images=generate_intermediate_images)
 
         if generate_difference_images:
             log(f'Generating difference image ({image_file_name})...')
             self._generate_image(gaf=gadf, output_folder=output_folder, cue_human_readable=cue_human_readable, 
-                                    cue_samples=cue_samples, n_timestamps=n_timestamps, image_file_name=image_file_name, 
-                                    generate_intermediate_images=generate_intermediate_images)
+                                 cue_samples=cue_samples, n_timestamps=n_timestamps, image_file_name=image_file_name,
+                                 generate_intermediate_images=generate_intermediate_images)
 
-    def generate_images(self, output_folder: str, generate_difference_images: bool = False, generate_intermediate_images: bool = False):
+    def generate_images(self, output_folder: str, generate_intermediate_images: bool = False, generate_difference_images: bool = False):
         gasf = GramianAngularField(image_size=1, method='summation')
         gadf = GramianAngularField(image_size=1, method='difference')
         
@@ -97,7 +122,6 @@ class GDF:
         raw = mne.io.read_raw_gdf(self.file_path)
         annotations = raw.annotations
         annotation_index = 0
-        processes = []
         for ann in annotations:
             description_int = self._description_from_annotation(ann)
             cue_human_readable = self.cue_map[description_int]
@@ -105,7 +129,7 @@ class GDF:
             if not self._check(ann):
                 log(f'Ignoring annotation ({annotation_index}): {cue_human_readable}...')
                 continue
-            
+
             log(f'Processing annotation ({annotation_index}): {cue_human_readable}...')
             start_time, end_time = self._time_from_annotation(ann)
             cue_samples = raw.copy().crop(tmin=start_time, tmax=end_time).to_data_frame().drop(columns='time')
@@ -120,12 +144,17 @@ class GDF:
             cue_samples = cue_samples * 1000 # convert to volts?
             
             # Mount image path
-            image_file_name = f'{raw_file_name}-Ann-{annotation_index}.png'
+            image_file_name = f'{raw_file_name}-Ann-{annotation_index}'
 
-            self._generate_image_from_annotation(ann, gasf, gadf, output_folder, cue_human_readable, cue_samples, n_timestamps, image_file_name, generate_intermediate_images, generate_difference_images)
+            self._generate_image_from_annotation(annotation=ann, gasf=gasf, gadf=gadf, 
+                                                 output_folder=output_folder, 
+                                                 cue_human_readable=cue_human_readable, cue_samples=cue_samples, n_timestamps=n_timestamps, 
+                                                 image_file_name=image_file_name, 
+                                                 generate_intermediate_images=generate_intermediate_images, 
+                                                 generate_difference_images=generate_difference_images)
             
             # # TODO: Test multiprocess only here and make the files for run in main process
-            # p = Process(target=self._generate_image_from_annotation, args=(ann, gasf, gadf, output_folder, cue_human_readable, cue_samples, n_timestamps, image_file_name, generate_intermediate_images, generate_difference_images))
+            # p = Process(target=self._generate_image_from_annotation, args=(ann, gasf, gadf, output_folder, cue_human_readable, cue_samples, n_timestamps, image_file_name))
             # processes.append(p)
             # p.start()
             
