@@ -1,6 +1,7 @@
 from multiprocessing import Process
 from GDF import GDF
 from Logger import log
+from ERSP import ERSP
 import os
 
 DESCRIPTION_EYES_OPEN = 276
@@ -49,14 +50,17 @@ def my_filter(file:str):
     return is_gdf_file(file) and is_training_file(file) and file in files
 
 number_processed_files = 0
-def generate_images(files_dir: str, gdf_file: str, output_folder: str):
+def generate_images(files_dir: str, gdf_file: str, output_folder: str, method: str == "GAF"):
     gdf_file_full_path = f'{files_dir}/{gdf_file}'
     log(f'Started {gdf_file_full_path}...')
-    gdf = GDF(file_path=gdf_file_full_path, valid_cue_descriptions=[DESCRIPTION_CUE_LEFT, DESCRIPTION_CUE_RIGHT], cue_map=LABELS_DICTIONARY)
-    gdf.generate_images(output_folder=output_folder, generate_intermediate_images=False, generate_difference_images=False)
+    if method == "GAF":
+        gdf = GDF(file_path=gdf_file_full_path, valid_cue_descriptions=[DESCRIPTION_CUE_LEFT, DESCRIPTION_CUE_RIGHT], cue_map=LABELS_DICTIONARY)
+        gdf.generate_images(output_folder=output_folder, generate_intermediate_images=False, generate_difference_images=False)
+    else:
+        ersp = ERSP(file_path=gdf_file_full_path, valid_cue_descriptions=[DESCRIPTION_CUE_LEFT, DESCRIPTION_CUE_RIGHT], cue_map=LABELS_DICTIONARY)
+        ersp.generate_images(output_folder=output_folder, generate_intermediate_images=False, generate_difference_images=False)
     # number_processed_files += 1
     log(f'Finished {gdf_file_full_path}!')
-
 
 base_dir = os.getcwd()
 files_dir = base_dir + "/datasets"
@@ -65,16 +69,18 @@ output_folder = base_dir + '/output'
 files = get_all_files_from_dir(files_dir)
 gdf_files = sorted(filter(my_filter, files), reverse=True)
 
-max_number_files = None
+max_number_files = 1
 proccesses = []
 
 log('!!! START !!!')
 log(f'Processing files in {files_dir}')
 log(f'Max number of files: {max_number_files}')
 for gdf_file in gdf_files:
-    p = Process(target=generate_images, args=(files_dir, gdf_file, output_folder))
-    proccesses.append(p)
-    p.start()
+    if __name__ == '__main__':    
+        # p = Process(target=generate_images, args=(files_dir, gdf_file, output_folder, "GAF"))
+        p = Process(target=generate_images, args=(files_dir, gdf_file, output_folder, "ERSP"))
+        proccesses.append(p)
+        p.start()
     
 for p in proccesses:
     if p.is_alive:
