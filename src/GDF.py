@@ -79,6 +79,7 @@ class GDF:
                         os.makedirs(final_image_folder)
         
                     image_path = f'{final_image_folder}/{image_file_name}.png'
+                    log("Saving image to " + image_path)
                     plt.imsave(image_path, image, cmap=cmap)
 
     # TODO: Is there a way to declare `gaf` type to `pyts.image.GramianAngularField`?
@@ -87,7 +88,7 @@ class GDF:
                         generate_intermediate_images: bool = False):
         # Generate Garmian Angular Field
         # Summation
-        image_folder = f'{output_folder}/{gaf.method}/{cue_human_readable}'
+        image_folder = f'{output_folder}/GAF/{gaf.method}/{cue_human_readable}'
         if not os.path.exists(image_folder):
             os.makedirs(image_folder)
         cue_samples_gaf = gaf.fit_transform(cue_samples)
@@ -121,24 +122,35 @@ class GDF:
                                  cue_samples=cue_samples, n_timestamps=n_timestamps, image_file_name=image_file_name,
                                  generate_intermediate_images=generate_intermediate_images)
 
-    def generate_images(self, output_folder: str, generate_intermediate_images: bool = False, generate_difference_images: bool = False):
+    def generate_images(self, output_folder: str, generate_intermediate_images: bool = False, generate_difference_images: bool = False, desired_channels: list = []):
         gasf = GramianAngularField(image_size=1, method='summation')
         gadf = GramianAngularField(image_size=1, method='difference')
         
         raw_file_name = self.file_path.split('/')[-1]
 
+        # Read data
         raw = mne.io.read_raw_gdf(self.file_path)
+        
+        # Filter channels
+        if len(desired_channels) > 0:
+            raw = raw.pick_channels(desired_channels)
+
+        # Get annotations and iterate over
         annotations = raw.annotations
         annotation_index = 0
         for ann in annotations:
+            # This is used only for the output folder as the event class
             description_int = self._description_from_annotation(ann)
             cue_human_readable = self.cue_map[description_int]
             
+            # Internal validation if the annotation should be processed
             if not self._check(ann):
                 log(f'Ignoring annotation ({annotation_index}): {cue_human_readable}...')
                 continue
 
             log(f'Processing annotation ({annotation_index}): {cue_human_readable}...')
+
+            # Extract samples for that event/cue
             start_time, end_time = self._time_from_annotation(ann)
             cue_samples = raw.copy().crop(tmin=start_time, tmax=end_time).to_data_frame().drop(columns='time')
             
@@ -148,7 +160,7 @@ class GDF:
             gasf.image_size = gadf.image_size = n_timestamps # the image size can only be as big as there are samples
             
             # Prepare data as required by GAF lib
-            cue_samples = cue_samples.transpose() # GramianAngularField.fit_transform() needs (n_samples, n_features): cue_samples.shape = (6, 314)
+            cue_samples = cue_samples.transpose() # GramianAngularField.fit_transform() expects (n_samples, n_features): cue_samples.shape = (6, 314)
             cue_samples = cue_samples * 1000 # convert to volts?
             
             # Mount image path
@@ -161,7 +173,7 @@ class GDF:
                                                  generate_intermediate_images=generate_intermediate_images, 
                                                  generate_difference_images=generate_difference_images)
             
-            # # TODO: Test multiprocess only here and make the files for run in main process
+            # # TODO: Test multiprocess only here and make the files to run in main process
             # p = Process(target=self._generate_image_from_annotation, args=(ann, gasf, gadf, output_folder, cue_human_readable, cue_samples, n_timestamps, image_file_name))
             # processes.append(p)
             # p.start()
