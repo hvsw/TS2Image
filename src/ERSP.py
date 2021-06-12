@@ -56,6 +56,9 @@ class ERSP:
         picks = mne.pick_channels(raw.info["ch_names"], ['EEG:C3', 'EEG:Cz', 'EEG:C4'])
 
         # epoch data ##################################################################
+        # TODO: What should be tmin, tmax? I think we're cropping it wrong...
+        # tmin, tmax
+        # Start and end time of the epochs in seconds, relative to the time-locked event. Defaults to -0.2 and 0.5, respectively.
         tmin, tmax = 0, 1.25  # define epochs around events (in s)
         # tmin, tmax = 0, 0  # define epochs around events (in s)
         
@@ -63,6 +66,7 @@ class ERSP:
         # Check epocs.drop_log or something
         # Error thrown: 'Event time samples were not unique. Consider setting the `event_repeated` parameter."'
         event_repeated = None
+
         epochs = mne.Epochs(raw, events, event_ids, tmin - 0.5, tmax + 0.5,
                             picks=picks, baseline=None, preload=True, event_repeated=event_repeated)
 
@@ -77,11 +81,12 @@ class ERSP:
         # kwargs = dict(n_permutations=100, step_down_p=0.05, seed=1,
         #               buffer_size=None, out_type='mask')  # for cluster test
 
-        # Run TF decomposition overall epochs
+        # Run time-frequency decomposition overall epochs
         tfr = tfr_multitaper(epochs, freqs=freqs, n_cycles=n_cycles,
                             use_fft=True, return_itc=False, average=False,
                             decim=2)
-        tfr.crop(tmin, tmax)
+        # TODO: Should we crop this? :think:
+        # tfr.crop(tmin, tmax)
         tfr.apply_baseline(baseline, mode="percent") # tfr.event_id = {'10': 10, '11': 11, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9}
 
         raw_file_name = self.file_path.split('/')[-1]

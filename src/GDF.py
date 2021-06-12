@@ -22,9 +22,16 @@ def log(msg:str, log_file: str = None):
 class GDF:
 
     def __init__(self, file_path: str, valid_cue_descriptions: list, cue_map, debug: bool = True):
+        # File path to 
         self.file_path = file_path
+
+        # Event type we want to generate images for
         self.valid_cue_descriptions = valid_cue_descriptions
+
+        # Variable to print or not some information along execution
         self.debug = debug
+
+        # This is a dictionary [number:text], we use the values to get the class name and use as the output folder
         self.cue_map = cue_map
         
     def _time_from_annotation(self, annotation):
@@ -34,6 +41,7 @@ class GDF:
         end_time = start_time + duration
         return start_time, end_time
 
+    # Get event description. It's the number, not the string.
     def _description_from_annotation(self, annotation):
         return int(annotation['description'])
     
