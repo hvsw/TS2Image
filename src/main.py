@@ -4,6 +4,11 @@ from Logger import log
 from ERSP import ERSP
 import os
 
+# B0101T.gdf
+# f = 250Hz
+# duration = 1.25s
+# n_samples = 1.25 * 150 = 313
+
 ## HELPERS
 def get_all_files_from_dir(mypath):
     from os import listdir
@@ -20,20 +25,57 @@ def is_training_file(file:str):
 # Set filter files
 def my_filter(file:str):
     files = ['B0101T.gdf']
-    return is_gdf_file(file) and is_training_file(file) and file in files
+    
+    files_filter_out = ['A09T.gdf']
+    # 2021-06-17 17:56:58.753: Started /Users/henrique/Documents/UFRGS/TCC Local/TS2Image/datasets/A09T.gdf...
+    # Extracting EDF parameters from /Users/henrique/Documents/UFRGS/TCC Local/TS2Image/datasets/A09T.gdf...
+    # GDF file detected
+    # /Users/henrique/Library/Python/3.8/lib/python/site-packages/mne/io/edf/edf.py:1044: DeprecationWarning: The binary mode of fromstring is deprecated, as it behaves surprisingly on unicode inputs. Use frombuffer instead
+    # etmode = np.fromstring(etmode, UINT8).tolist()[0]
+    # Setting channel info structure...
+    # Creating raw.info structure...
+    # /Users/henrique/Documents/UFRGS/TCC Local/TS2Image/src/GDF.py:132: RuntimeWarning: Channel names are not unique, found duplicates for: {'EEG'}. Applying running numbers for duplicates.
+    # raw = mne.io.read_raw_gdf(self.file_path)
+    # Traceback (most recent call last):
+    # File "/Users/henrique/Documents/UFRGS/TCC Local/TS2Image/src/main.py", line 94, in <module>
+    #     generate_images(files_dir, gdf_file, output_folder, "GAF")
+    # File "/Users/henrique/Documents/UFRGS/TCC Local/TS2Image/src/main.py", line 36, in generate_images
+    #     gdf.generate_images(output_folder=output_folder, generate_intermediate_images=True, generate_difference_images=False, desired_channels=desired_channels, merge_channels=False)
+    # File "/Users/henrique/Documents/UFRGS/TCC Local/TS2Image/src/GDF.py", line 136, in generate_images
+    #     raw = raw.pick_channels(desired_channels)
+    # File "/Users/henrique/Library/Python/3.8/lib/python/site-packages/mne/channels/channels.py", line 795, in pick_channels
+    #     return self._pick_drop_channels(picks)
+    # File "/Users/henrique/Library/Python/3.8/lib/python/site-packages/mne/channels/channels.py", line 919, in _pick_drop_channels
+    #     pick_info(self.info, idx, copy=False)
+    # File "<decorator-gen-8>", line 24, in pick_info
+    # File "/Users/henrique/Library/Python/3.8/lib/python/site-packages/mne/io/pick.py", line 533, in pick_info
+    #     raise ValueError('No channels match the selection.')
+    # ValueError: No channels match the selection.
+
+    return is_gdf_file(file) and is_training_file(file) # and file.startswith("B") and (file not in files_filter_out) and file in files
+
+def desired_channels_for_file(file_name: str):
+    channels = ["C3", "C4", "Cz"]
+    if file_name.startswith("A"):
+        return ['EEG-C3', 'EEG-C4', 'EEG-Cz']
+    else:
+        return ['EEG:C3', 'EEG:C4', 'EEG:Cz']
 
 def generate_images(files_dir: str, gdf_file: str, output_folder: str, method: str == "GAF"):
     # Set the events you want to export
     valid_cue_descriptions = [DESCRIPTION_CUE_LEFT, DESCRIPTION_CUE_RIGHT]
 
+    # Set desired channels
+    desired_channels = desired_channels_for_file(gdf_file)
+
     gdf_file_full_path = f'{files_dir}/{gdf_file}'
     log(f'Started {gdf_file_full_path}...')
     if method == "GAF":
         gdf = GDF(file_path=gdf_file_full_path, valid_cue_descriptions=valid_cue_descriptions, cue_map=LABELS_DICTIONARY)
-        gdf.generate_images(output_folder=output_folder, generate_intermediate_images=False, generate_difference_images=False)
+        gdf.generate_images(output_folder=output_folder, generate_intermediate_images=True, generate_difference_images=False, desired_channels=desired_channels, merge_channels=False)
     else:
         ersp = ERSP(file_path=gdf_file_full_path, valid_cue_descriptions=valid_cue_descriptions, cue_map=LABELS_DICTIONARY)
-        ersp.generate_images(output_folder=output_folder, generate_intermediate_images=False, generate_difference_images=False)
+        ersp.generate_images(output_folder=output_folder, generate_intermediate_images=True, desired_channels=desired_channels, merge_channels=True)
     # number_processed_files += 1
     log(f'Finished {gdf_file_full_path}!')
 
@@ -78,17 +120,23 @@ files_dir = base_dir + "/datasets"
 output_folder = base_dir + '/output'
 
 files = get_all_files_from_dir(files_dir)
-gdf_files = sorted(filter(my_filter, files), reverse=True)
+gdf_files = sorted(filter(my_filter, files), reverse=False)
 
 max_number_files = 1
 proccesses = []
 
 log('!!! START !!!')
 log(f'Processing files in {files_dir}')
+log(f'Files: {gdf_files}')
 log(f'Max number of files: {max_number_files}')
 for gdf_file in gdf_files:
+    # generate_images(files_dir, gdf_file, output_folder, "GAF")
+    generate_images(files_dir, gdf_file, output_folder, "ERSP")
+
+    # TODO: Fix multithreading
+    continue
     if __name__ == '__main__':
-        p = Process(target=generate_images, args=(files_dir, gdf_file, output_folder, "GAF"))
+        # p = Process(target=generate_images, args=(files_dir, gdf_file, output_folder, "GAF"))
         # p = Process(target=generate_images, args=(files_dir, gdf_file, output_folder, "ERSP"))
         proccesses.append(p)
         p.start()
@@ -99,3 +147,64 @@ for p in proccesses:
 
 log('!!! FINISH !!!')
 log(f'Processed files: {number_processed_files}')
+
+# TODO: SOME WEIRD OUTPUTS when processing BCI Competition IV 2a and 2b datasets:
+# TODO: How to fix channels with same name, ignore file?
+# Extracting EDF parameters from /Users/henrique/Documents/UFRGS/TCC Local/TS2Image/datasets/A09T.gdf...
+# GDF file detected
+# /Users/henrique/Library/Python/3.8/lib/python/site-packages/mne/io/edf/edf.py:1044: DeprecationWarning: The binary mode of fromstring is deprecated, as it behaves surprisingly on unicode inputs. Use frombuffer instead
+#   etmode = np.fromstring(etmode, UINT8).tolist()[0]
+# Setting channel info structure...
+# Creating raw.info structure...
+# /Users/henrique/Documents/UFRGS/TCC Local/TS2Image/src/GDF.py:132: RuntimeWarning: Channel names are not unique, found duplicates for: {'EEG'}. Applying running numbers for duplicates.
+#   raw = mne.io.read_raw_gdf(self.file_path)
+# Traceback (most recent call last):
+#   File "/Users/henrique/Documents/UFRGS/TCC Local/TS2Image/src/main.py", line 94, in <module>
+#     generate_images(files_dir, gdf_file, output_folder, "GAF")
+#   File "/Users/henrique/Documents/UFRGS/TCC Local/TS2Image/src/main.py", line 36, in generate_images
+#     gdf.generate_images(output_folder=output_folder, generate_intermediate_images=True, generate_difference_images=False, desired_channels=desired_channels, merge_channels=False)
+#   File "/Users/henrique/Documents/UFRGS/TCC Local/TS2Image/src/GDF.py", line 136, in generate_images
+#     raw = raw.pick_channels(desired_channels)
+#   File "/Users/henrique/Library/Python/3.8/lib/python/site-packages/mne/channels/channels.py", line 795, in pick_channels
+#     return self._pick_drop_channels(picks)
+#   File "/Users/henrique/Library/Python/3.8/lib/python/site-packages/mne/channels/channels.py", line 919, in _pick_drop_channels
+#     pick_info(self.info, idx, copy=False)
+#   File "<decorator-gen-8>", line 24, in pick_info
+#   File "/Users/henrique/Library/Python/3.8/lib/python/site-packages/mne/io/pick.py", line 533, in pick_info
+#     raise ValueError('No channels match the selection.')
+# ValueError: No channels match the selection.
+
+# TODO: Is this a problem?
+# 2021-06-12 19:26:58.272: Started /Users/henrique/Documents/UFRGS/TCC Local/TS2Image/datasets/B0101T.gdf...
+# Extracting EDF parameters from /Users/henrique/Documents/UFRGS/TCC Local/TS2Image/datasets/B0101T.gdf...
+# GDF file detected
+# /Users/henrique/Library/Python/3.8/lib/python/site-packages/mne/io/edf/edf.py:1044: DeprecationWarning: The binary mode of fromstring is deprecated, as it behaves surprisingly on unicode inputs. Use frombuffer instead
+#   etmode = np.fromstring(etmode, UINT8).tolist()[0]
+# Setting channel info structure...
+# /Users/henrique/Documents/UFRGS/TCC Local/TS2Image/src/GDF.py:132: RuntimeWarning: Highpass cutoff frequency 100.0 is greater than lowpass cutoff frequency 0.5, setting values to 0 and Nyquist.
+#   raw = mne.io.read_raw_gdf(self.file_path)
+# Creating raw.info structure...
+
+# TODO: How we got this 1072 key from?
+# 2021-06-12 19:27:55.370: Started /Users/henrique/Documents/UFRGS/TCC Local/TS2Image/datasets/A09T.gdf...
+# Extracting EDF parameters from /Users/henrique/Documents/UFRGS/TCC Local/TS2Image/datasets/A09T.gdf...
+# GDF file detected
+# /Users/henrique/Library/Python/3.8/lib/python/site-packages/mne/io/edf/edf.py:1044: DeprecationWarning: The binary mode of fromstring is deprecated, as it behaves surprisingly on unicode inputs. Use frombuffer instead
+#   etmode = np.fromstring(etmode, UINT8).tolist()[0]
+# Setting channel info structure...
+# Creating raw.info structure...
+# /Users/henrique/Documents/UFRGS/TCC Local/TS2Image/src/GDF.py:132: RuntimeWarning: Channel names are not unique, found duplicates for: {'EEG'}. Applying running numbers for duplicates.
+#   raw = mne.io.read_raw_gdf(self.file_path)
+# 2021-06-12 19:27:55.386: Ignoring annotation (0): Start of a new run...
+# 2021-06-12 19:27:55.386: Ignoring annotation (0): Idling EEG (eyes open)...
+# 2021-06-12 19:27:55.386: Ignoring annotation (0): Start of a new run...
+# 2021-06-12 19:27:55.386: Ignoring annotation (0): Idling EEG (eyes closed)...
+# 2021-06-12 19:27:55.386: Ignoring annotation (0): Start of a new run...
+# Traceback (most recent call last):
+#   File "/Users/henrique/Documents/UFRGS/TCC Local/TS2Image/src/main.py", line 90, in <module>
+#     generate_images(files_dir, gdf_file, output_folder, "GAF")
+#   File "/Users/henrique/Documents/UFRGS/TCC Local/TS2Image/src/main.py", line 33, in generate_images
+#     gdf.generate_images(output_folder=output_folder, generate_intermediate_images=False, generate_difference_images=False)
+#   File "/Users/henrique/Documents/UFRGS/TCC Local/TS2Image/src/GDF.py", line 144, in generate_images
+#     cue_human_readable = self.cue_map[description_int]
+# KeyError: 1072
