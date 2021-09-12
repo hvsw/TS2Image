@@ -1,5 +1,5 @@
 from multiprocessing import Process
-from GDF import GDF
+from GAF import GAF
 from Logger import log
 from ERSP import ERSP
 import os
@@ -10,22 +10,16 @@ import os
 # n_samples = 1.25 * 150 = 313
 
 ## HELPERS
-def get_all_files_from_dir(mypath):
+# File managment helpers
+def list_filtered_files(input_folder:str):
     from os import listdir
     from os.path import isfile, join
-    onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
-    return onlyfiles
-
-def is_gdf_file(file:str):
-    return file.endswith('.gdf')
-
-def is_training_file(file:str):
-    return file.split('.')[0].endswith('T')
+    files = [f for f in listdir(input_folder) if isfile(join(input_folder, f))]
+    gdf_files = sorted(filter(custom_filter, files), reverse=False)
+    return gdf_files
 
 # Set filter files
-def my_filter(file:str):
-    files = ['B0101T.gdf']
-    
+def custom_filter(file:str):
     files_filter_out = ['A09T.gdf']
     # 2021-06-17 17:56:58.753: Started /Users/henrique/Documents/UFRGS/TCC Local/TS2Image/datasets/A09T.gdf...
     # Extracting EDF parameters from /Users/henrique/Documents/UFRGS/TCC Local/TS2Image/datasets/A09T.gdf...
@@ -52,32 +46,21 @@ def my_filter(file:str):
     #     raise ValueError('No channels match the selection.')
     # ValueError: No channels match the selection.
 
-    return is_gdf_file(file) and is_training_file(file) # and file.startswith("B") and (file not in files_filter_out) and file in files
+    files = ['B0101T.gdf']
+    # should_include = (len(files) > 0 and file in files) or len(files) == 0
 
+    is_gdf_file = file.endswith('.gdf')
+    is_training_file = file.split('.')[0].endswith('T')
+
+    return is_gdf_file and is_training_file # and file.startswith("B") and (file not in files_filter_out) and file in files
+
+# This function defines the channels you want to use for each file
 def desired_channels_for_file(file_name: str):
     channels = ["C3", "C4", "Cz"]
     if file_name.startswith("A"):
         return ['EEG-C3', 'EEG-C4', 'EEG-Cz']
     else:
         return ['EEG:C3', 'EEG:C4', 'EEG:Cz']
-
-def generate_images(files_dir: str, gdf_file: str, output_folder: str, method: str == "GAF"):
-    # Set the events you want to export
-    valid_cue_descriptions = [DESCRIPTION_CUE_LEFT, DESCRIPTION_CUE_RIGHT]
-
-    # Set desired channels
-    desired_channels = desired_channels_for_file(gdf_file)
-
-    gdf_file_full_path = f'{files_dir}/{gdf_file}'
-    log(f'Started {gdf_file_full_path}...')
-    if method == "GAF":
-        gdf = GDF(file_path=gdf_file_full_path, valid_cue_descriptions=valid_cue_descriptions, cue_map=LABELS_DICTIONARY)
-        gdf.generate_images(output_folder=output_folder, generate_intermediate_images=True, generate_difference_images=False, desired_channels=desired_channels, merge_channels=False)
-    else:
-        ersp = ERSP(file_path=gdf_file_full_path, valid_cue_descriptions=valid_cue_descriptions, cue_map=LABELS_DICTIONARY)
-        ersp.generate_images(output_folder=output_folder, generate_intermediate_images=True, desired_channels=desired_channels, merge_channels=True)
-    # number_processed_files += 1
-    log(f'Finished {gdf_file_full_path}!')
 
 # Set LABELS_DICTIONARY according to your dataset. These are the events in BCI IV competition dataset.
 DESCRIPTION_EYES_OPEN = 276
@@ -109,44 +92,46 @@ LABELS_DICTIONARY = {
     DESCRIPTION_START_NEW_RUN:'Start of a new run'
 }
 
-# Set global variable to add some locks to prevent processing to many files at once. Currently, not in use.
-number_processed_files = 0
+# Helper function to generate the images. Serve kind as a facade.
+def generate_images(files_dir: str, gdf_file: str, output_folder: str, method: str = "GAF"):
+    # Set the events you want to export
+    valid_annotation_descriptions = [DESCRIPTION_CUE_LEFT, DESCRIPTION_CUE_RIGHT]
+
+    # Set desired channels
+    desired_channels = desired_channels_for_file(gdf_file)
+
+    gdf_file_full_path = f'{files_dir}/{gdf_file}'
+    log(f'Started {gdf_file_full_path}...')
+    if method == "GAF":
+        gaf = GAF(file_path=gdf_file_full_path, valid_cue_descriptions=valid_annotation_descriptions, cue_map=LABELS_DICTIONARY)
+        gaf.generate_images(output_folder=output_folder, generate_intermediate_images=True, generate_difference_images=False, desired_channels=desired_channels, merge_channels=False)
+    else:
+        ersp = ERSP(file_path=gdf_file_full_path, valid_cue_descriptions=valid_annotation_descriptions, cue_map=LABELS_DICTIONARY)
+        ersp.generate_images(output_folder=output_folder, generate_intermediate_images=True, desired_channels=desired_channels, merge_channels=True)
+    # number_processed_files += 1
+    log(f'Finished {gdf_file_full_path}!')
 
 base_dir = os.getcwd()
 # Set the directory containing the files you want to process
-files_dir = base_dir + "/datasets"
+input_folder = base_dir + "/datasets"
 
 # Set the root output folder
 output_folder = base_dir + '/output'
 
-files = get_all_files_from_dir(files_dir)
-gdf_files = sorted(filter(my_filter, files), reverse=False)
+## -------------------------- DON'T TOUCH ---------------------------
 
-max_number_files = 1
-proccesses = []
+gdf_files = list_filtered_files(input_folder)
 
 log('!!! START !!!')
-log(f'Processing files in {files_dir}')
+log(f'Processing files in {input_folder}')
 log(f'Files: {gdf_files}')
-log(f'Max number of files: {max_number_files}')
+
+# Set the method you want to use. Accepted values: GAF, ERSP
+method = "ERSP"
 for gdf_file in gdf_files:
-    # generate_images(files_dir, gdf_file, output_folder, "GAF")
-    generate_images(files_dir, gdf_file, output_folder, "ERSP")
-
-    # TODO: Fix multithreading
-    continue
-    if __name__ == '__main__':
-        # p = Process(target=generate_images, args=(files_dir, gdf_file, output_folder, "GAF"))
-        # p = Process(target=generate_images, args=(files_dir, gdf_file, output_folder, "ERSP"))
-        proccesses.append(p)
-        p.start()
-
-for p in proccesses:
-    if p.is_alive:
-        p.join()
+    generate_images(input_folder, gdf_file, output_folder, method=method)
 
 log('!!! FINISH !!!')
-log(f'Processed files: {number_processed_files}')
 
 # TODO: SOME WEIRD OUTPUTS when processing BCI Competition IV 2a and 2b datasets:
 # TODO: How to fix channels with same name, ignore file?

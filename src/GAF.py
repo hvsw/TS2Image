@@ -8,7 +8,7 @@ from datetime import datetime
 import Logger
 import cv2
 
-__all__ = ["GDF"]
+__all__ = ["GAF"]
 
 def log(msg:str, log_file: str = None):
     now = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
@@ -20,7 +20,7 @@ def log(msg:str, log_file: str = None):
         f.write(txt)
         f.close
 
-class GDF:
+class GAF:
 
     def __init__(self, file_path: str, valid_cue_descriptions: list, cue_map, debug: bool = True):
         # File path to 
