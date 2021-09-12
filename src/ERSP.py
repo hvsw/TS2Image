@@ -14,9 +14,9 @@ import Logger
 __all__ = ["ERSP"]
 
 class ERSP:
-    def __init__(self, file_path: str, valid_cue_descriptions: list, cue_map, debug: bool = True):
+    def __init__(self, file_path: str, valid_event_descriptions: list, cue_map, debug: bool = True):
         self.file_path = file_path
-        self.valid_cue_descriptions = valid_cue_descriptions
+        self.valid_cue_descriptions = valid_event_descriptions
         self.debug = debug
         self.cue_map = cue_map
     

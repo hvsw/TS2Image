@@ -21,13 +21,12 @@ def log(msg:str, log_file: str = None):
         f.close
 
 class GAF:
-
-    def __init__(self, file_path: str, valid_cue_descriptions: list, cue_map, debug: bool = True):
+    def __init__(self, file_path: str, valid_events_descriptions: list, cue_map, debug: bool = True):
         # File path to 
         self.file_path = file_path
 
         # Event type we want to generate images for
-        self.valid_cue_descriptions = valid_cue_descriptions
+        self.valid_events_descriptions = valid_events_descriptions
 
         # Variable to print or not some information along execution
         self.debug = debug
@@ -35,7 +34,7 @@ class GAF:
         # This is a dictionary [number:text], we use the values to get the class name and use as the output folder
         self.cue_map = cue_map
         
-    def _time_from_annotation(self, annotation):
+    def __time_from_annotation(self, annotation):
         # Get data to slice the time series data
         start_time = annotation['onset']
         duration = annotation['duration']
@@ -43,27 +42,15 @@ class GAF:
         return start_time, end_time
 
     # Get event description. It's the number, not the string.
-    def _description_from_annotation(self, annotation):
+    def __description_from_annotation(self, annotation):
         return int(annotation['description'])
     
-    def _should_process_annotation(self, annotation):
-        # Ignore annotations that are not cues
-        description_int = self._description_from_annotation(annotation)
-        is_valid = description_int in self.valid_cue_descriptions
+    def __should_process_annotation(self, annotation):
+        description_int = self.__description_from_annotation(annotation)
+        is_valid = description_int in self.valid_events_descriptions
         return is_valid
 
-    # def _generate_image_name(self, annotation_index: int, channel_index: int = None):
-    #     raw_file_name = self.file_path.split('/')[-1]
-    #     file_name_components = [raw_file_name, 'Ann', annotation_index]
-    #     if not channel_index is None:
-    #         file_name_components.extend(['Ch', channel_index])
-
-    #     file_name_components.join('-')
-    #     image_file_name = f'{image_file_name}.png'
-        
-    #     return image_file_name
-
-    def _save_image(self, image_folder, image_file_name, image):
+    def __save_image(self, image_folder, image_file_name, image):
         #  Color maps
         all_cmaps = {
             'Perceptually Uniform Sequential' : ['viridis', 'plasma', 'inferno', 'magma', 'cividis'],
@@ -96,7 +83,7 @@ class GAF:
                     # np.savetxt(image_path, image, delimiter=",")
 
     # TODO: Is there a way to declare `gaf` type to be `pyts.image.GramianAngularField`?
-    def _generate_image(self, gaf, output_folder: str, cue_human_readable: str, 
+    def __generate_image(self, gaf, output_folder: str, cue_human_readable: str, 
                         cue_samples: pd.DataFrame, n_timestamps: int, image_file_name: str, 
                         generate_intermediate_images: bool = False, merge_channels: bool = True):
         # Generate Garmian Angular Field
@@ -109,28 +96,28 @@ class GAF:
             # Reshape to reduce/remove channels dimension, making it a taller matrix i.e. stacking channels images vertically
             # https://github.com/johannfaouzi/pyts/issues/95#issuecomment-809177142
             merged_channels_image = cue_samples_gaf.reshape(-1, n_timestamps)
-            self._save_image(image_folder, image_file_name, merged_channels_image)
+            self.__save_image(image_folder, image_file_name, merged_channels_image)
         
-        # TODO: generate_intermediate_images is coming as False but we're passing True in _generate_image_from_annotation
+        # TODO: generate_intermediate_images is coming as False but we're passing True in __generate_image_from_annotation
         if generate_intermediate_images:
             channel_index = 0
             for img in cue_samples_gaf:
                 intermediate_image_file_name = f"{image_file_name}-Ch-{channel_index}"
-                self._save_image(image_folder, intermediate_image_file_name, img)
+                self.__save_image(image_folder, intermediate_image_file_name, img)
                 channel_index += 1
 
-    def _generate_image_from_annotation(self, gasf, gadf, output_folder: str, 
+    def __generate_image_from_annotation(self, gasf, gadf, output_folder: str, 
                                         cue_human_readable: str, cue_samples: pd.DataFrame, 
                                         n_timestamps: int, image_file_name: str, 
                                         generate_intermediate_images: bool = False, generate_difference_images: bool = False, merge_channels: bool = True):
         log(f'Generating summation image ({image_file_name})...')
-        self._generate_image(gaf=gasf, output_folder=output_folder, cue_human_readable=cue_human_readable, 
+        self.__generate_image(gaf=gasf, output_folder=output_folder, cue_human_readable=cue_human_readable, 
                              cue_samples=cue_samples, n_timestamps=n_timestamps, image_file_name=image_file_name,
                              generate_intermediate_images=generate_intermediate_images, merge_channels=merge_channels)
 
         if generate_difference_images:
             log(f'Generating difference image ({image_file_name})...')
-            self._generate_image(gaf=gadf, output_folder=output_folder, cue_human_readable=cue_human_readable, 
+            self.__generate_image(gaf=gadf, output_folder=output_folder, cue_human_readable=cue_human_readable, 
                                  cue_samples=cue_samples, n_timestamps=n_timestamps, image_file_name=image_file_name,
                                  generate_intermediate_images=generate_intermediate_images, merge_channels=merge_channels)
 
@@ -160,18 +147,20 @@ class GAF:
         annotation_index = 0
         for ann in annotations:
             # This is used only for the output folder as the event class
-            description_int = self._description_from_annotation(ann)
+            description_int = self.__description_from_annotation(ann)
+
+            # TODO: This can crash if the annotation is not in the `event_description_dictionary`
             cue_human_readable = self.cue_map[description_int]
             
             # Internal validation if the annotation should be processed
-            if not self._should_process_annotation(ann):
-                log(f'Ignoring annotation ({annotation_index}): {cue_human_readable}. See _should_process_annotation to understand why.')
+            if not self.__should_process_annotation(ann):
+                log(f'Ignoring annotation ({annotation_index}): {cue_human_readable}. See __should_process_annotation to understand why.')
                 continue
 
             log(f'Processing annotation ({annotation_index}): {cue_human_readable}...')
 
             # Extract samples for that event/cue
-            start_time, end_time = self._time_from_annotation(ann)
+            start_time, end_time = self.__time_from_annotation(ann)
             cue_samples = raw.copy().crop(tmin=start_time, tmax=end_time).to_data_frame().drop(columns='time')
             
             n_timestamps, n_samples = cue_samples.shape # (314, 6)
@@ -189,7 +178,7 @@ class GAF:
             # Mount image path
             image_file_name = f'size_{gasf.image_size}-{raw_file_name}-Ann-{annotation_index}'
 
-            self._generate_image_from_annotation(gasf=gasf, gadf=gadf, 
+            self.__generate_image_from_annotation(gasf=gasf, gadf=gadf, 
                                                  output_folder=output_folder, 
                                                  cue_human_readable=cue_human_readable, cue_samples=cue_samples, n_timestamps=n_timestamps, 
                                                  image_file_name=image_file_name, 
@@ -197,7 +186,7 @@ class GAF:
                                                  generate_difference_images=generate_difference_images, merge_channels=merge_channels)
             
             # # TODO: Test multiprocess only here and make the files to run in main process
-            # p = Process(target=self._generate_image_from_annotation, args=(ann, gasf, gadf, output_folder, cue_human_readable, cue_samples, n_timestamps, image_file_name))
+            # p = Process(target=self.__generate_image_from_annotation, args=(ann, gasf, gadf, output_folder, cue_human_readable, cue_samples, n_timestamps, image_file_name))
             # processes.append(p)
             # p.start()
             
