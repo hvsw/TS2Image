@@ -1,15 +1,19 @@
+# TODO: Update MNE from 0.17.0 to latest
+import mne
+
 import os
 import numpy as np
-import mne
 import matplotlib.pyplot as plt
 import pandas as pd
 from datetime import datetime
-from mne.viz.utils import center_cmap
-from mne.io import concatenate_raws, read_raw_edf
+# from mne.viz.utils import center_cmap
+# from mne.io import concatenate_raws, read_raw_edf
 from mne.time_frequency import tfr_multitaper
-from mne.stats import permutation_cluster_1samp_test as pcluster_test
+# from mne.stats import permutation_cluster_1samp_test as pcluster_test
 
-import Logger
+# import Logger
+
+# Python 3.8.2
 
 __all__ = ["ERSP"]
 
@@ -27,7 +31,7 @@ class ERSP:
                             'OrRd', 'PuRd', 'RdPu', 'BuPu', 'GnBu', 'PuBu', 'YlGnBu', 'PuBuGn', 'BuGn', 'YlGn']
         }
 
-        # TODO: Testar outras cores
+        # TODO: Test other color maps
         default = 'viridis'
         cmaps_selected = [default]
 
@@ -54,7 +58,9 @@ class ERSP:
         raw.filter(l_freq=1, h_freq=40)
 
         # TODO: Filter by event_id = {"769":769}
+        # https://mne.tools/stable/generated/mne.events_from_annotations.html?highlight=events_from_annotations#mne.events_from_annotations
         # Map descriptions (keys) to integer event codes (values). Only the descriptions present will be mapped, others will be ignored.
+        # [string descriptions:integer event codes]
         event_ids = {"769":1, "770":2}  # map event IDs to tasks
         # event_ids = LABELS_DICTIONARY
         # event_ids = None

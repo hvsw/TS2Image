@@ -1,12 +1,15 @@
+# TODO: Update MNE from 0.17.0 to latest
+import mne
 from pyts.image import GramianAngularField
 import os
 import numpy as np
-import mne
 import matplotlib.pyplot as plt
 import pandas as pd
 from datetime import datetime
-import Logger
+# import Logger
 import cv2
+
+# Python 3.8.2
 
 __all__ = ["GAF"]
 

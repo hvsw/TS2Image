@@ -1,6 +1,8 @@
 import os
 current_working_directory = os.getcwd()
 
+# Python 3.8.2
+
 # Set the directory containing the files you want to process
 input_folder = current_working_directory + "/datasets"
 

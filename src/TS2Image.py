@@ -4,6 +4,8 @@ from Logger import log
 from ERSP import ERSP
 import os
 
+# Python 3.8.2
+
 __all__ = ["TS2Image"]
 
 # Use public method `generate_images` to process time series files into images
