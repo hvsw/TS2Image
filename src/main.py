@@ -50,10 +50,19 @@ BCI_competition_dataset_events_dictionary = {
 # Set the events you want to export
 valid_events_descriptions = [DESCRIPTION_CUE_LEFT, DESCRIPTION_CUE_RIGHT]
 
+# Padding to be applied to start and end of time window
+t_padding = 0.5
+
+# Start time window padding
+t_start = 0
+
+# End time window padding
+t_end = 1.25
+##########################################################################
 from TS2Image import TS2Image
 ts2i = TS2Image(input_folder=input_folder, output_folder=output_folder)
-ts2i.generate_images(method="GAF", valid_events_descriptions=valid_events_descriptions, events_dictionary=BCI_competition_dataset_events_dictionary)
-
+ts2i.generate_images(method="ERSP", valid_events_descriptions=valid_events_descriptions, events_dictionary=BCI_competition_dataset_events_dictionary, t_start=t_start, t_end=t_end, t_padding=t_padding)
+##########################################################################
 from Logger import log
 log('End main')
 

@@ -68,7 +68,7 @@ class TS2Image:
             return ['EEG:C3', 'EEG:C4', 'EEG:Cz']
 
     # Helper function to generate the images. Serve kind as a facade.
-    def __generate_images(self, files_dir: str, gdf_file: str, output_folder: str, method: str, events_descriptions_to_process: list, events_dictionary: dict):
+    def __generate_images(self, files_dir: str, gdf_file: str, output_folder: str, method: str, events_descriptions_to_process: list, t_start, t_end, t_padding, events_dictionary: dict):
         # Set desired channels
         desired_channels = self.__desired_channels_for_file(gdf_file)
 
@@ -79,12 +79,12 @@ class TS2Image:
             gaf.generate_images(output_folder=output_folder, generate_intermediate_images=True, generate_difference_images=False, desired_channels=desired_channels, merge_channels=False)
         else:
             ersp = ERSP(file_path=gdf_file_full_path)
-            ersp.generate_images(output_folder=output_folder, desired_events=events_descriptions_to_process, generate_intermediate_images=True, desired_channels=desired_channels, merge_channels=True)
+            ersp.generate_images(output_folder=output_folder, desired_events=events_descriptions_to_process, t_start=t_start, t_end=t_end, t_padding=t_padding, generate_intermediate_images=True, desired_channels=desired_channels, merge_channels=True)
 
         log(f'Finished {gdf_file_full_path}!')
 
     # Set the method you want to use. Accepted values: GAF, ERSP
-    def generate_images(self, method: str, valid_events_descriptions: list, events_dictionary: dict):
+    def generate_images(self, method: str, valid_events_descriptions: list, events_dictionary: dict, t_start, t_end, t_padding):
         base_dir = os.getcwd()
         # Set the directory containing the files you want to process
         input_folder = base_dir + "/datasets"
@@ -100,6 +100,6 @@ class TS2Image:
         log(f'Files: {gdf_files}')
 
         for gdf_file in gdf_files:
-            self.__generate_images(input_folder, gdf_file, output_folder, method=method, events_descriptions_to_process=valid_events_descriptions, events_dictionary=events_dictionary)
+            self.__generate_images(input_folder, gdf_file, output_folder, method=method, t_start=t_start, t_end=t_end, t_padding=t_padding, events_descriptions_to_process=valid_events_descriptions, events_dictionary=events_dictionary)
 
         log('!!! FINISH !!!')

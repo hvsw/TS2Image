@@ -63,7 +63,10 @@ class ERSP:
 
         return event_ids
 
-    def generate_images(self, output_folder: str, desired_events: list = None, generate_intermediate_images: bool = False, desired_channels: list = [], merge_channels=False):
+    # Start and end time of the epochs in seconds, relative to the time-locked event. Defaults to -0.2 and 0.5, respectively.
+    # t_start and t_end refer to the epoch time window around the event. 
+    # Ex.: t_start = -0.5, t_end = 1.5, t_event = 10, would create an epoch starting at 10-0.5 and end at 11.5
+    def generate_images(self, output_folder: str, desired_channels: list, desired_events: list, t_start, t_end, t_padding, generate_intermediate_images: bool = False, merge_channels=False):
         raw = mne.io.read_raw_gdf(self.file_path, preload=True)
         raw.filter(l_freq=1, h_freq=40)
 
@@ -82,22 +85,16 @@ class ERSP:
         picks = mne.pick_channels(raw.info["ch_names"], channels)
         
         ##################### EPOCH DATA #####################
-        # TODO: What should be tmin, tmax? I think we're cropping it wrong...
-        # Start and end time of the epochs in seconds, relative to the time-locked event. Defaults to -0.2 and 0.5, respectively.
-        tmin, tmax = 0, 1.25  # define epochs around events (in s)
-        
         # WARNING: This prevents exceptions to be thrown if we have overlapping events and it can also drop data!!!
         # Check epocs.drop_log or something
         # Error thrown: 'Event time samples were not unique. Consider setting the `event_repeated` parameter."'
         event_repeated = None
 
-        # TODO: time_padding to reduce border effects?
-        time_padding = 0.5
-        
         # https://mne.discourse.group/t/what-is-tmin-and-tmax-in-epochs/2920/1
         # “Epochs” are equal-duration chunks of the continuous raw signal. 
         # Epochs are created relative to a series of “events” (an event is a sample number plus an event ID integer encoding what kind of event it was)
-        epochs = mne.Epochs(raw, events, event_id, tmin - time_padding, tmax + time_padding,
+        # TODO: Test if we can replace event_id by desired_events. It seems it already supports a list of ids, so no need to convert list to dict...
+        epochs = mne.Epochs(raw, events, event_id, t_start, t_end,
                             picks=picks, baseline=None, preload=True, event_repeated=event_repeated)
 
         # Compute ERDS maps ###########################################################
@@ -113,8 +110,10 @@ class ERSP:
         return_inter_trial_coherence = False
         tfr = tfr_multitaper(epochs, freqs=freqs, n_cycles=n_cycles,
                              use_fft=True, return_itc=return_inter_trial_coherence, average=False, decim=2)
+        
         # TODO: Should we crop this? :think:
-        # tfr.crop(tmin, tmax)
+        # https://mne.tools/stable/generated/mne.time_frequency.EpochsTFR.html#mne.time_frequency.EpochsTFR.crop
+        tfr.crop(t_start, t_end)
         
         # https://mne.tools/stable/generated/mne.time_frequency.EpochsTFR.html#mne.time_frequency.EpochsTFR.apply_baseline
         # The time interval to apply rescaling / baseline correction. 
@@ -133,7 +132,7 @@ class ERSP:
         # TODO: So at the end of the day we're justing averaging all runs for an specific event type? See tfr_ev.average()
         # This will produce less images, maybe not enough to train the CNN?
 
-        for key_event_description, value_event_id_int in event_ids.items():
+        for key_event_description, value_event_id_int in event_id.items():
             # select desired epochs for visualization
             tfr_ev = tfr[key_event_description]
             cue_human_readable = key_event_description
