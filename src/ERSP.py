@@ -18,9 +18,8 @@ from mne.time_frequency import tfr_multitaper
 __all__ = ["ERSP"]
 
 class ERSP:
-    def __init__(self, file_path: str, valid_events_descriptions: list, debug: bool = True):
+    def __init__(self, file_path: str, debug: bool = True):
         self.file_path = file_path
-        self.valid_cue_descriptions = valid_events_descriptions
         self.debug = debug
     
     def _save_image(self, image_folder, image_file_name, image):
@@ -52,15 +51,21 @@ class ERSP:
                     # TODO: Add mask here https://mne.tools/stable/generated/mne.time_frequency.AverageTFR.html#mne.time_frequency.AverageTFR.plot
                     plt.imsave(image_path, image, cmap=cmap)
 
-    def generate_images(self, output_folder: str, generate_intermediate_images: bool = False, desired_channels: list = [], merge_channels=False):
+    def generate_images(self, output_folder: str, desired_events: list = None, generate_intermediate_images: bool = False, desired_channels: list = [], merge_channels=False):
         raw = mne.io.read_raw_gdf(self.file_path, preload=True)
         raw.filter(l_freq=1, h_freq=40)
+
+        event_ids = {}
+        index = 1
+        for desired_event in desired_events:
+            event_ids[desired_event] = index
+            index += 1
 
         # TODO: Filter by event_id = {"769":769}
         # https://mne.tools/stable/generated/mne.events_from_annotations.html?highlight=events_from_annotations#mne.events_from_annotations
         # Map descriptions (keys) to integer event codes (values). Only the descriptions present will be mapped, others will be ignored.
         # [string(!!!) descriptions:integer event codes]
-        event_ids = {"769":1, "770":2}  # map event IDs to tasks
+        # event_ids = {"769":1, "770":2}  # map event IDs to tasks
         # event_ids = LABELS_DICTIONARY
         # event_ids = None
         
