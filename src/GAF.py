@@ -166,7 +166,7 @@ class GAF:
             start_time, end_time = self.__time_from_annotation(ann)
             cue_samples = raw.copy().crop(tmin=start_time, tmax=end_time).to_data_frame().drop(columns='time')
             
-            n_timestamps, n_samples = cue_samples.shape # (314, 6)
+            n_timestamps, n_samples = cue_samples.shape # n_timestamps.shape = (314 timesamples, 6 channels)
             
             # Setup GAFs
             # The image size can only be as big as there are samples, and the minimum size required by the ML model is 32.
