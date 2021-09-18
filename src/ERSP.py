@@ -97,7 +97,7 @@ class ERSP:
         # https://mne.discourse.group/t/what-is-tmin-and-tmax-in-epochs/2920/1
         # “Epochs” are equal-duration chunks of the continuous raw signal. 
         # Epochs are created relative to a series of “events” (an event is a sample number plus an event ID integer encoding what kind of event it was)
-        epochs = mne.Epochs(raw, events, event_ids, tmin - time_padding, tmax + time_padding,
+        epochs = mne.Epochs(raw, events, event_id, tmin - time_padding, tmax + time_padding,
                             picks=picks, baseline=None, preload=True, event_repeated=event_repeated)
 
         # Compute ERDS maps ###########################################################
