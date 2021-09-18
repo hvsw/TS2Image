@@ -18,11 +18,10 @@ from mne.time_frequency import tfr_multitaper
 __all__ = ["ERSP"]
 
 class ERSP:
-    def __init__(self, file_path: str, valid_event_descriptions: list, cue_map, debug: bool = True):
+    def __init__(self, file_path: str, valid_events_descriptions: list, debug: bool = True):
         self.file_path = file_path
-        self.valid_cue_descriptions = valid_event_descriptions
+        self.valid_cue_descriptions = valid_events_descriptions
         self.debug = debug
-        self.cue_map = cue_map
     
     def _save_image(self, image_folder, image_file_name, image):
         all_cmaps = {
@@ -60,7 +59,7 @@ class ERSP:
         # TODO: Filter by event_id = {"769":769}
         # https://mne.tools/stable/generated/mne.events_from_annotations.html?highlight=events_from_annotations#mne.events_from_annotations
         # Map descriptions (keys) to integer event codes (values). Only the descriptions present will be mapped, others will be ignored.
-        # [string descriptions:integer event codes]
+        # [string(!!!) descriptions:integer event codes]
         event_ids = {"769":1, "770":2}  # map event IDs to tasks
         # event_ids = LABELS_DICTIONARY
         # event_ids = None
@@ -69,7 +68,7 @@ class ERSP:
         # Get events and event_id from an Annotations object.
         # This function will assign an integer Event ID to each unique element of raw.annotations.description, 
         # and will return the mapping of descriptions to integer Event IDs along with the derived Event array.
-        events, event_id = mne.events_from_annotations(raw, event_ids)
+        events, generated_event_ids = mne.events_from_annotations(raw, event_id=event_ids)
         # events.shape = (271, 3) = (n_events, 3) = the events array is [start_sample, 0?, new int from event_id converted by the lib]
         
         channels = desired_channels

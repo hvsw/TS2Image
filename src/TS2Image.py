@@ -78,7 +78,7 @@ class TS2Image:
             gaf = GAF(file_path=gdf_file_full_path, valid_events_descriptions=valid_events_descriptions, cue_map=events_dictionary)
             gaf.generate_images(output_folder=output_folder, generate_intermediate_images=True, generate_difference_images=False, desired_channels=desired_channels, merge_channels=False)
         else:
-            ersp = ERSP(file_path=gdf_file_full_path, valid_events_descriptions=valid_events_descriptions, cue_map=events_dictionary)
+            ersp = ERSP(file_path=gdf_file_full_path, valid_events_descriptions=valid_events_descriptions)
             ersp.generate_images(output_folder=output_folder, generate_intermediate_images=True, desired_channels=desired_channels, merge_channels=True)
 
         log(f'Finished {gdf_file_full_path}!')
