@@ -46,11 +46,11 @@ class GAF:
 
     # Get event description. It's the number, not the string.
     def __description_from_annotation(self, annotation):
-        return int(annotation['description'])
+        return annotation['description']
     
     def __should_process_annotation(self, annotation):
-        description_int = self.__description_from_annotation(annotation)
-        is_valid = description_int in self.valid_events_descriptions
+        description = self.__description_from_annotation(annotation)
+        is_valid = description in self.valid_events_descriptions
         return is_valid
 
     def __save_image(self, image_folder, image_file_name, image):
@@ -150,10 +150,10 @@ class GAF:
         annotation_index = 0
         for ann in annotations:
             # This is used only for the output folder as the event class
-            description_int = self.__description_from_annotation(ann)
-
+            description = self.__description_from_annotation(ann)
+            
             # TODO: This can crash if the annotation is not in the `event_description_dictionary`
-            cue_human_readable = self.cue_map[description_int]
+            cue_human_readable = self.cue_map[description]
             
             # Internal validation if the annotation should be processed
             if not self.__should_process_annotation(ann):
