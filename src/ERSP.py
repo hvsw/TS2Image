@@ -51,29 +51,31 @@ class ERSP:
                     # TODO: Add mask here https://mne.tools/stable/generated/mne.time_frequency.AverageTFR.html#mne.time_frequency.AverageTFR.plot
                     plt.imsave(image_path, image, cmap=cmap)
 
+    def _generate_events_dictionary(self, events_descriptions_list: list):
+        event_ids = {}
+        if events_descriptions_list is None:
+            return event_ids
+        
+        index = 1
+        for desired_event in events_descriptions_list:
+            event_ids[desired_event] = index
+            index += 1
+
+        return event_ids
+
     def generate_images(self, output_folder: str, desired_events: list = None, generate_intermediate_images: bool = False, desired_channels: list = [], merge_channels=False):
         raw = mne.io.read_raw_gdf(self.file_path, preload=True)
         raw.filter(l_freq=1, h_freq=40)
 
-        event_ids = {}
-        index = 1
-        for desired_event in desired_events:
-            event_ids[desired_event] = index
-            index += 1
-
-        # TODO: Filter by event_id = {"769":769}
         # https://mne.tools/stable/generated/mne.events_from_annotations.html?highlight=events_from_annotations#mne.events_from_annotations
         # Map descriptions (keys) to integer event codes (values). Only the descriptions present will be mapped, others will be ignored.
-        # [string(!!!) descriptions:integer event codes]
-        # event_ids = {"769":1, "770":2}  # map event IDs to tasks
-        # event_ids = LABELS_DICTIONARY
-        # event_ids = None
-        
+        event_id = self._generate_events_dictionary(events_descriptions_list=desired_events)
+
         # https://mne.tools/stable/generated/mne.events_from_annotations.html?highlight=events_from_annotations#mne.events_from_annotations
         # Get events and event_id from an Annotations object.
         # This function will assign an integer Event ID to each unique element of raw.annotations.description, 
-        # and will return the mapping of descriptions to integer Event IDs along with the derived Event array.
-        events, generated_event_ids = mne.events_from_annotations(raw, event_id=event_ids)
+        # and will return the mapping of descriptions to integer Event IDs along with the derived Event list.
+        events, generated_event_ids = mne.events_from_annotations(raw, event_id=event_id)
         # events.shape = (271, 3) = (n_events, 3) = the events array is [start_sample, 0?, new int from event_id converted by the lib]
         
         channels = desired_channels
