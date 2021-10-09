@@ -25,40 +25,23 @@ class TS2Image:
 
     # Set filter files
     def __custom_filter(self, file:str):
-        files_filter_out = ['A09T.gdf']
-        # 2021-06-17 17:56:58.753: Started /Users/henrique/Documents/UFRGS/TCC Local/TS2Image/datasets/A09T.gdf...
-        # Extracting EDF parameters from /Users/henrique/Documents/UFRGS/TCC Local/TS2Image/datasets/A09T.gdf...
-        # GDF file detected
-        # /Users/henrique/Library/Python/3.8/lib/python/site-packages/mne/io/edf/edf.py:1044: DeprecationWarning: The binary mode of fromstring is deprecated, as it behaves surprisingly on unicode inputs. Use frombuffer instead
-        # etmode = np.fromstring(etmode, UINT8).tolist()[0]
-        # Setting channel info structure...
-        # Creating raw.info structure...
-        # /Users/henrique/Documents/UFRGS/TCC Local/TS2Image/src/GDF.py:132: RuntimeWarning: Channel names are not unique, found duplicates for: {'EEG'}. Applying running numbers for duplicates.
-        # raw = mne.io.read_raw_gdf(self.file_path)
-        # Traceback (most recent call last):
-        # File "/Users/henrique/Documents/UFRGS/TCC Local/TS2Image/src/main.py", line 94, in <module>
-        #     generate_images(files_dir, gdf_file, output_folder, "GAF")
-        # File "/Users/henrique/Documents/UFRGS/TCC Local/TS2Image/src/main.py", line 36, in generate_images
-        #     gdf.generate_images(output_folder=output_folder, generate_intermediate_images=True, generate_difference_images=False, desired_channels=desired_channels, merge_channels=False)
-        # File "/Users/henrique/Documents/UFRGS/TCC Local/TS2Image/src/GDF.py", line 136, in generate_images
-        #     raw = raw.pick_channels(desired_channels)
-        # File "/Users/henrique/Library/Python/3.8/lib/python/site-packages/mne/channels/channels.py", line 795, in pick_channels
-        #     return self._pick_drop_channels(picks)
-        # File "/Users/henrique/Library/Python/3.8/lib/python/site-packages/mne/channels/channels.py", line 919, in _pick_drop_channels
-        #     pick_info(self.info, idx, copy=False)
-        # File "<decorator-gen-8>", line 24, in pick_info
-        # File "/Users/henrique/Library/Python/3.8/lib/python/site-packages/mne/io/pick.py", line 533, in pick_info
-        #     raise ValueError('No channels match the selection.')
-        # ValueError: No channels match the selection.
-
-        files = ['B0101T.gdf']
-        # should_include = (len(files) > 0 and file in files) or len(files) == 0
-
+        # Note: Change your filter here
+        should_include_file = self.__bci_competition_b(file)
+        log(f"should_include_file: {file}: {should_include_file}")
+        return should_include_file
+    
+    # http://www.bbci.de/competition/iv/desc_2b.pdf
+    # 3 training, 2 evaluation
+    def __bci_competition_b(self, file):
         is_gdf_file = file.endswith('.gdf')
+        
+        # we only want training
         is_training_file = file.split('.')[0].endswith('T')
 
-        return is_gdf_file and is_training_file # and file.startswith("B") and (file not in files_filter_out) and file in files
+        # Smiley feedback sessions have different timing scheme
+        is_smiley_feedback_session = file.endswith("03T.gdf") or file.endswith("04E.gdf") or file.endswith("05E.gdf")
 
+        return is_gdf_file and is_training_file and file.startswith("B") and not is_smiley_feedback_session
     # This function defines the channels you want to use for each file
     def __desired_channels_for_file(self, file_name: str):
         channels = ["C3", "C4", "Cz"]
