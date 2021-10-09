@@ -177,9 +177,8 @@ class GAF:
             gasf.image_size = gadf.image_size = max(32, n_timestamps)
             
             # Prepare data as required by GAF lib
-            cue_samples = cue_samples.transpose() # GramianAngularField.fit_transform() expects (n_samples, n_features): cue_samples.shape = (6, 314)
-            # TODO: remove this multiplication?
-            cue_samples = cue_samples * 1000 # convert to volts?
+            # GramianAngularField.fit_transform() expects (n_samples, n_features): cue_samples.shape = (6, 314) = (n_channels, n_timestamps)
+            cue_samples = cue_samples.transpose() 
             
             # Mount image path
             image_file_name = f'size_{gasf.image_size}-{raw_file_name}-Ann-{annotation_index}'
