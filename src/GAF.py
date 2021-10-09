@@ -174,7 +174,7 @@ class GAF:
             # Setup GAFs
             # The image size can only be as big as there are samples, and the minimum size required by the ML model is 32.
             # TODO: What if we get a signal that has less than 32 samples?
-            gasf.image_size = gadf.image_size = min(32, n_timestamps)
+            gasf.image_size = gadf.image_size = max(32, n_timestamps)
             
             # Prepare data as required by GAF lib
             cue_samples = cue_samples.transpose() # GramianAngularField.fit_transform() expects (n_samples, n_features): cue_samples.shape = (6, 314)
