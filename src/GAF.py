@@ -88,7 +88,7 @@ class GAF:
     # TODO: Is there a way to declare `gaf` type to be `pyts.image.GramianAngularField`?
     def __generate_image(self, gaf, output_folder: str, cue_human_readable: str, 
                         cue_samples: pd.DataFrame, n_timestamps: int, image_file_name: str, 
-                        generate_intermediate_images: bool = False, merge_channels: bool = True):
+                        generate_intermediate_images: bool = False, merge_channels: bool = True, is_pause: bool = False):
         # Generate Garmian Angular Field
         image_folder = f'{output_folder}/GAF/{gaf.method}/{cue_human_readable}'
         if not os.path.exists(image_folder):
@@ -112,19 +112,19 @@ class GAF:
     def __generate_image_from_annotation(self, gasf, gadf, output_folder: str, 
                                         cue_human_readable: str, cue_samples: pd.DataFrame, 
                                         n_timestamps: int, image_file_name: str, 
-                                        generate_intermediate_images: bool = False, generate_difference_images: bool = False, merge_channels: bool = True):
+                                        generate_intermediate_images: bool = False, generate_difference_images: bool = False, merge_channels: bool = True, is_pause: bool = False):
         log(f'Generating summation image ({image_file_name})...')
         self.__generate_image(gaf=gasf, output_folder=output_folder, cue_human_readable=cue_human_readable, 
                              cue_samples=cue_samples, n_timestamps=n_timestamps, image_file_name=image_file_name,
-                             generate_intermediate_images=generate_intermediate_images, merge_channels=merge_channels)
+                             generate_intermediate_images=generate_intermediate_images, merge_channels=merge_channels, is_pause=is_pause)
 
         if generate_difference_images:
             log(f'Generating difference image ({image_file_name})...')
             self.__generate_image(gaf=gadf, output_folder=output_folder, cue_human_readable=cue_human_readable, 
                                  cue_samples=cue_samples, n_timestamps=n_timestamps, image_file_name=image_file_name,
-                                 generate_intermediate_images=generate_intermediate_images, merge_channels=merge_channels)
+                                 generate_intermediate_images=generate_intermediate_images, merge_channels=merge_channels, is_pause=is_pause)
 
-    def generate_images(self, output_folder: str, generate_intermediate_images: bool = False, generate_difference_images: bool = False, desired_channels: list = [], merge_channels: bool=True):
+    def generate_images(self, output_folder: str, t_start, duration, generate_intermediate_images: bool = False, generate_difference_images: bool = False, desired_channels: list = [], merge_channels: bool=True):
         gasf = GramianAngularField(image_size=32, method='summation')
         gadf = GramianAngularField(image_size=32, method='difference')
         
@@ -148,6 +148,7 @@ class GAF:
         # Get annotations and iterate over
         annotations = raw.annotations
         annotation_index = 0
+        is_pause = False
         for ann in annotations:
             # This is used only for the output folder as the event class
             description = self.__description_from_annotation(ann)
@@ -164,7 +165,9 @@ class GAF:
 
             # Extract samples for that event/cue
             start_time, end_time = self.__time_from_annotation(ann)
-            cue_samples = raw.copy().crop(tmin=start_time, tmax=end_time).to_data_frame().drop(columns='time')
+            tmin = start_time + t_start
+            tmax = tmin + duration
+            cue_samples = raw.copy().crop(tmin=tmin, tmax=tmax).to_data_frame().drop(columns='time')
             
             n_timestamps, n_samples = cue_samples.shape # n_timestamps.shape = (314 timesamples, 6 channels)
             
@@ -180,13 +183,16 @@ class GAF:
             
             # Mount image path
             image_file_name = f'size_{gasf.image_size}-{raw_file_name}-Ann-{annotation_index}'
+            if is_pause:
+                image_file_name = image_file_name + "-pause"
 
             self.__generate_image_from_annotation(gasf=gasf, gadf=gadf, 
                                                  output_folder=output_folder, 
                                                  cue_human_readable=cue_human_readable, cue_samples=cue_samples, n_timestamps=n_timestamps, 
                                                  image_file_name=image_file_name, 
                                                  generate_intermediate_images=generate_intermediate_images, 
-                                                 generate_difference_images=generate_difference_images, merge_channels=merge_channels)
+                                                 generate_difference_images=generate_difference_images, merge_channels=merge_channels,
+                                                 is_pause=is_pause)
             
             # # TODO: Test multiprocess only here and make the files to run in main process
             # p = Process(target=self.__generate_image_from_annotation, args=(ann, gasf, gadf, output_folder, cue_human_readable, cue_samples, n_timestamps, image_file_name))

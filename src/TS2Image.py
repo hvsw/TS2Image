@@ -68,23 +68,26 @@ class TS2Image:
             return ['EEG:C3', 'EEG:C4', 'EEG:Cz']
 
     # Helper function to generate the images. Serve kind as a facade.
-    def __generate_images(self, files_dir: str, gdf_file: str, output_folder: str, method: str, events_descriptions_to_process: list, t_start, t_end, t_padding, events_dictionary: dict):
+    def __generate_images(self, files_dir: str, file_name: str, output_folder: str, method: str, events_descriptions_to_process: list, t_start, duration, events_dictionary: dict):
         # Set desired channels
-        desired_channels = self.__desired_channels_for_file(gdf_file)
+        desired_channels = self.__desired_channels_for_file(file_name)
 
-        gdf_file_full_path = f'{files_dir}/{gdf_file}'
-        log(f'Started {gdf_file_full_path}...')
+        file_full_path = f'{files_dir}/{file_name}'
+        log(f'Started {file_full_path}...')
         if method == "GAF":
-            gaf = GAF(file_path=gdf_file_full_path, valid_events_descriptions=events_descriptions_to_process, cue_map=events_dictionary)
-            gaf.generate_images(output_folder=output_folder, generate_intermediate_images=True, generate_difference_images=False, desired_channels=desired_channels, merge_channels=False)
+            gaf = GAF(file_path=file_full_path, valid_events_descriptions=events_descriptions_to_process, cue_map=events_dictionary)
+            gaf.generate_images(output_folder=output_folder, t_start=t_start, duration=duration, generate_intermediate_images=True, generate_difference_images=False, desired_channels=desired_channels, merge_channels=False)
         else:
-            ersp = ERSP(file_path=gdf_file_full_path)
-            ersp.generate_images(output_folder=output_folder, desired_events=events_descriptions_to_process, t_start=t_start, t_end=t_end, t_padding=t_padding, generate_intermediate_images=True, desired_channels=desired_channels, merge_channels=True)
+            ersp = ERSP(file_path=file_full_path)
+            ersp.generate_images(output_folder=output_folder, desired_events=events_descriptions_to_process, t_start=t_start, t_end=duration, generate_intermediate_images=True, desired_channels=desired_channels, merge_channels=True)
 
-        log(f'Finished {gdf_file_full_path}!')
+        log(f'Finished {file_full_path}!')
 
     # Set the method you want to use. Accepted values: GAF, ERSP
-    def generate_images(self, method: str, valid_events_descriptions: list, events_dictionary: dict, t_start, t_end, t_padding):
+    def generate_images(self, method: str, valid_events_descriptions: list, events_dictionary: dict, t_start, duration):
+        if not method == "GAF":
+            raise Exception(f'Method {method} not supported yet')
+        
         base_dir = os.getcwd()
         # Set the directory containing the files you want to process
         input_folder = base_dir + "/datasets"
@@ -92,14 +95,14 @@ class TS2Image:
         # Set the root output folder
         output_folder = base_dir + '/output'
 
-        gdf_files = self.__list_filtered_files(input_folder)
+        files = self.__list_filtered_files(self.input_folder)
 
         log('!!! START !!!')
-        log(f'Processing files in {input_folder}')
-        log(f'Images will be here {output_folder}')
-        log(f'Files: {gdf_files}')
+        log(f'Processing files in {self.input_folder}')
+        log(f'Images will be here {self.output_folder}')
+        log(f'Files: {files}')
 
-        for gdf_file in gdf_files:
-            self.__generate_images(input_folder, gdf_file, output_folder, method=method, t_start=t_start, t_end=t_end, t_padding=t_padding, events_descriptions_to_process=valid_events_descriptions, events_dictionary=events_dictionary)
+        for file in files:
+            self.__generate_images(self.input_folder, file, self.output_folder, method=method, t_start=t_start, duration=duration, events_descriptions_to_process=valid_events_descriptions, events_dictionary=events_dictionary)
 
         log('!!! FINISH !!!')

@@ -2,7 +2,9 @@ import os
 current_working_directory = os.getcwd()
 
 # Python 3.8.2
-
+##########################################################################
+######################## Variables to change #############################
+##########################################################################
 # Set the directory containing the files you want to process
 input_folder = current_working_directory + "/datasets"
 
@@ -51,20 +53,22 @@ BCI_competition_dataset_events_dictionary = {
 valid_events_descriptions = [DESCRIPTION_CUE_LEFT, DESCRIPTION_CUE_RIGHT]
 
 # Padding to be applied to start and end of time window
-t_padding = 0.5
+t_padding = 1 # imagery period starts 1 seconds after cue
 
-# Start time window padding
+# Start time window padding. Negative values are accepted.
 t_start = 0
 
 # End time window padding
-t_end = 1.25
+duration = 4 # imagery duration is 4 seconds
+
 ##########################################################################
 from TS2Image import TS2Image
 ts2i = TS2Image(input_folder=input_folder, output_folder=output_folder)
-ts2i.generate_images(method="ERSP", valid_events_descriptions=valid_events_descriptions, events_dictionary=BCI_competition_dataset_events_dictionary, t_start=t_start, t_end=t_end, t_padding=t_padding)
+ts2i.generate_images(method="ERSP", valid_events_descriptions=valid_events_descriptions, events_dictionary=BCI_competition_dataset_events_dictionary, t_start=t_start, duration=duration)
 ##########################################################################
 from Logger import log
 log('End main')
+##########################################################################
 
 ## NOTES ---------------------------------------------------
 
