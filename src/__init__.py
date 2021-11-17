@@ -1,2 +1,3 @@
 from .Logger import log
-from .GDF import GDF
+from .GAF import GAF
+from .ERSP import ERSP
