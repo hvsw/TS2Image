@@ -1,4 +1,3 @@
-# TODO: Update MNE from 0.17.0 to latest
 import mne
 
 import os
@@ -9,7 +8,8 @@ from datetime import datetime
 # from mne.viz.utils import center_cmap
 # from mne.io import concatenate_raws, read_raw_edf
 from mne.time_frequency import tfr_multitaper
-# from mne.stats import permutation_cluster_1samp_test as pcluster_test
+from mne.stats import permutation_cluster_1samp_test as pcluster_test
+from mne.viz.utils import center_cmap
 
 # import Logger
 
@@ -33,6 +33,18 @@ class ERSP:
         default = 'viridis'
         cmaps_selected = [default]
 
+        # Tests
+        custom_cmap = center_cmap(plt.cm.RdBu, -1, 1)  # zero maps to white
+        final_image_folder = f'{image_folder}'
+        if not os.path.exists(final_image_folder):
+            os.makedirs(final_image_folder)
+
+        image_path = f'{final_image_folder}/{image_file_name}.png'
+        plt.imsave(image_path, image, cmap=custom_cmap)
+        return
+
+        # cmaps_selected = [cmap]
+
         # set min and max ERDS values in plot
         # vmin, vmax = -1, 1  
         
@@ -49,8 +61,10 @@ class ERSP:
         
                     image_path = f'{final_image_folder}/{image_file_name}.png'
                     # TODO: Add mask here https://mne.tools/stable/generated/mne.time_frequency.AverageTFR.html#mne.time_frequency.AverageTFR.plot
-                    plt.imsave(image_path, image, cmap=cmap)
+                    plt.imsave(image_path, image, cmap=custom_cmap)
 
+    # Generate sequential ids for events_descriptions_list
+    # { x: 1, y: 2, z: 3, ... }
     def _generate_events_dictionary(self, events_descriptions_list: list):
         event_ids = {}
         if events_descriptions_list is None:
@@ -66,7 +80,7 @@ class ERSP:
     # Start and end time of the epochs in seconds, relative to the time-locked event. Defaults to -0.2 and 0.5, respectively.
     # t_start and t_end refer to the epoch time window around the event. 
     # Ex.: t_start = -0.5, t_end = 1.5, t_event = 10, would create an epoch starting at 10-0.5 and end at 11.5
-    def generate_images(self, output_folder: str, desired_channels: list, desired_events: list, t_start, t_end, t_padding, generate_intermediate_images: bool = False, merge_channels=False):
+    def generate_images(self, output_folder: str, desired_channels: list, desired_events: list, t_start, t_end, generate_intermediate_images: bool = False, merge_channels=False):
         raw = mne.io.read_raw_gdf(self.file_path, preload=True)
         raw.filter(l_freq=1, h_freq=40)
 
@@ -99,15 +113,16 @@ class ERSP:
 
         # Compute ERDS maps ###########################################################
         # Frequencies from 2-35Hz
-        freqs = np.arange(2, 36, 1)  
+        freqs = np.arange(1, 40, 1)  
         
         # TODO: What this n_cycles actually mean???
         # The number of cycles globally or for each frequency. The time-window length is thus T = n_cycles / freq.
         n_cycles = freqs # use constant t/f resolution
 
-        # Run time-frequency decomposition overall epochs
-        # Time-Frequency Representation (TFR)
+        # Return inter-trial coherence (ITC) as well as averaged (or single-trial) power.
         return_inter_trial_coherence = False
+
+        # Time-Frequency Representation (TFR)
         tfr = tfr_multitaper(epochs, freqs=freqs, n_cycles=n_cycles,
                              use_fft=True, return_itc=return_inter_trial_coherence, average=False, decim=2)
         

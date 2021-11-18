@@ -45,6 +45,7 @@ class TS2Image:
     # This function defines the channels you want to use for each file
     def __desired_channels_for_file(self, file_name: str):
         channels = ["C3", "C4", "Cz"]
+        # BCI dataset
         if file_name.startswith("A"):
             return ['EEG-C3', 'EEG-C4', 'EEG-Cz']
         else:
@@ -57,19 +58,21 @@ class TS2Image:
 
         file_full_path = f'{files_dir}/{file_name}'
         log(f'Started {file_full_path}...')
-        if method == "GAF":
+        log(f"Working on {method.upper()}")
+        if method.upper() == "GAF":
             gaf = GAF(file_path=file_full_path, valid_events_descriptions=events_descriptions_to_process, cue_map=events_dictionary)
             gaf.generate_images(output_folder=output_folder, t_start=t_start, duration=duration, generate_intermediate_images=True, generate_difference_images=False, desired_channels=desired_channels, merge_channels=False)
         else:
             ersp = ERSP(file_path=file_full_path)
-            ersp.generate_images(output_folder=output_folder, desired_events=events_descriptions_to_process, t_start=t_start, t_end=duration, generate_intermediate_images=True, desired_channels=desired_channels, merge_channels=True)
+            ersp.generate_images(output_folder=output_folder, desired_events=events_descriptions_to_process, t_start=t_start, t_end=duration, generate_intermediate_images=True, desired_channels=desired_channels, merge_channels=False)
 
         log(f'Finished {file_full_path}!')
 
     # Set the method you want to use. Accepted values: GAF, ERSP
+    # events_dictionary: a dictionary specifying the ALL the data set events' identifier and description. This is optional only needed by GAF class to get the description to create folders to save the generate images. This is not used by ERSP class.
     def generate_images(self, method: str, valid_events_descriptions: list, events_dictionary: dict, t_start, duration):
-        if not method == "GAF":
-            raise Exception(f'Method {method} not supported yet')
+        # if not method == "GAF":
+        #     raise Exception(f'Method {method} not supported yet')
         
         base_dir = os.getcwd()
         # Set the directory containing the files you want to process
@@ -81,11 +84,12 @@ class TS2Image:
         files = self.__list_filtered_files(self.input_folder)
 
         log('!!! START !!!')
-        log(f'Processing files in {self.input_folder}')
-        log(f'Images will be here {self.output_folder}')
+        log(f"Method: {method}")
+        log(f'Processing files inside: {self.input_folder}')
         log(f'Files: {files}')
 
         for file in files:
             self.__generate_images(self.input_folder, file, self.output_folder, method=method, t_start=t_start, duration=duration, events_descriptions_to_process=valid_events_descriptions, events_dictionary=events_dictionary)
 
+        log(f'Generated images available at: {self.output_folder}')
         log('!!! FINISH !!!')

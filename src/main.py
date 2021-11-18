@@ -1,6 +1,15 @@
 import os
 current_working_directory = os.getcwd()
 
+import argparse
+
+# TODO: Add other arguments to parser
+parser = argparse.ArgumentParser(description='Parse TS2Image parameters.')
+parser.add_argument('method', metavar='Method', type=str, nargs='?',
+                    help='Image generation method: GAF or ERSP')
+args = parser.parse_args()
+method = args.method or "GAF"
+
 # Python 3.8.2
 ##########################################################################
 ######################## Variables to change #############################

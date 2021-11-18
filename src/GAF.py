@@ -1,4 +1,3 @@
-# TODO: Update MNE from 0.17.0 to latest
 import mne
 from pyts.image import GramianAngularField
 import os
@@ -54,6 +53,16 @@ class GAF:
         return is_valid
 
     def __save_image(self, image_folder, image_file_name, image):
+        final_image_folder = f'{image_folder}'
+        if not os.path.exists(final_image_folder):
+            os.makedirs(final_image_folder)
+
+        image_path = f'{final_image_folder}/{image_file_name}.png'
+        log("Saving image to " + image_path)
+        # plt.imsave(image_path, desired_image)
+        plt.imsave(image_path, image, cmap='viridis')
+        return
+
         #  Color maps
         all_cmaps = {
             'Perceptually Uniform Sequential' : ['viridis', 'plasma', 'inferno', 'magma', 'cividis'],
@@ -64,10 +73,10 @@ class GAF:
         cmaps_selected = [default]
         
         # Resize image if needed
-        desired_image_size = 256
+        # desired_image_size = 256
         desired_image = image
-        if image.shape[0] < desired_image_size:
-            desired_image = cv2.resize(desired_image, dsize=(desired_image_size, desired_image_size), interpolation=cv2.INTER_AREA)
+        # if image.shape[0] < desired_image_size:
+        #     desired_image = cv2.resize(desired_image, dsize=(desired_image_size, desired_image_size), interpolation=cv2.INTER_AREA)
         
         for cmap_type, cmaps in all_cmaps.items():
             for cmap in cmaps:
@@ -128,22 +137,16 @@ class GAF:
         gasf = GramianAngularField(image_size=32, method='summation')
         gadf = GramianAngularField(image_size=32, method='difference')
         
-        raw_file_name = self.file_path.split('/')[-1]
-
         # Read data
         raw = mne.io.read_raw_gdf(self.file_path, preload=True)
         
         # Filter channels
         if len(desired_channels) > 0:
-            # TODO: Improve channels filter!
-            # Use cases:
-            # - File with multiple channels with same name "EEG": /Users/henrique/Documents/UFRGS/TCC Local/TS2Image/datasets/A09T.gdf
-            # -  How can we address this?
-            # - Files with different prefixes "EEG:", "EEG-", etc: /Users/henrique/Documents/UFRGS/TCC Local/TS2Image/datasets/A09T.gdf
-            # -  This is a detail the user may need to address
             raw = raw.pick_channels(desired_channels)
 
         raw.filter(l_freq=1, h_freq=40)
+
+        raw_file_name = self.file_path.split('/')[-1]
 
         # Get annotations and iterate over
         annotations = raw.annotations
@@ -192,10 +195,5 @@ class GAF:
                                                  generate_intermediate_images=generate_intermediate_images, 
                                                  generate_difference_images=generate_difference_images, merge_channels=merge_channels,
                                                  is_pause=is_pause)
-            
-            # # TODO: Test multiprocess only here and make the files to run in main process
-            # p = Process(target=self.__generate_image_from_annotation, args=(ann, gasf, gadf, output_folder, cue_human_readable, cue_samples, n_timestamps, image_file_name))
-            # processes.append(p)
-            # p.start()
             
             annotation_index += 1
