@@ -10,23 +10,19 @@ pip -r install requirements.txt
 ```
 
 ### Configuration
-# NOTE: Set the directory containing the files you want to process
+Set the directory containing the files you want to process:
 `input_folder = current_working_directory + "/datasets"`
 
-# NOTE: Set the root output folder
+Set the root output folder:
 `output_folder = current_working_directory + '/images-output'`
 
-Create according to your dataset. For example, these are the events from some files in BCI IV competition dataset.
+Create according to your dataset. For example, these are the events from some files in BCI IV competition dataset:
 ```
 DESCRIPTION_EYES_OPEN = "276"
 DESCRIPTION_EYES_CLOSED = "277"
 DESCRIPTION_START_TRIAL = "768"
 DESCRIPTION_CUE_LEFT = "769"
 DESCRIPTION_CUE_RIGHT = "770"
-DESCRIPTION_SOMETHING = "771" # TODO: What is this description? It's from A01T.gdf
-DESCRIPTION_SOMETHING2 = "772" # TODO: What is this description? It's from A01T.gdf
-# DESCRIPTION_SOMETHING = 773 # TODO: What is this description? It's from A01T.gdf
-# DESCRIPTION_SOMETHING = 774 # TODO: What is this description? It's from A01T.gdf
 DESCRIPTION_BCI_FEEDBACK = "781"
 DESCRIPTION_CUE_UNKNOWN = "783"
 DESCRIPTION_REJECTED_TRIAL = "1023"
@@ -44,8 +40,6 @@ BCI_competition_dataset_events_dictionary = {
     DESCRIPTION_CUE_RIGHT:'Cue onset right (class 2)',
     DESCRIPTION_BCI_FEEDBACK:'BCI feedback (continuous)',
     DESCRIPTION_CUE_UNKNOWN:'Cue unknown',
-    DESCRIPTION_SOMETHING:'DESCRIPTION_SOMETHING', 
-    DESCRIPTION_SOMETHING2:'DESCRIPTION_SOMETHING 2', 
     DESCRIPTION_REJECTED_TRIAL:'Rejected trial',
     DESCRIPTION_UNKNOWN_GROUP:'Unkown Group',
     DESCRIPTION_EYE_MOVEMENT_HORIZONTAL:'Horizontal eye movement',
@@ -56,16 +50,16 @@ BCI_competition_dataset_events_dictionary = {
 }
 ```
 
-List of events from `events_dictionary` you want to export from your dataset
+List of events from `events_dictionary` you want to export from your dataset:
 `valid_events_descriptions = [DESCRIPTION_CUE_LEFT, DESCRIPTION_CUE_RIGHT]`
 
-Start time window padding, in seconds. Negative values are accepted.
+Start time window padding, in seconds. Negative values are accepted:
 `t_start = 0`
 
-Time window length, in seconds
+Time window length, in seconds:
 `duration = 4`
 
-Event identifiers we want to process
+Event identifiers we want to process:
 `valid_events_descriptions = ["769", "770"]`
 
 # References
