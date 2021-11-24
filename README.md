@@ -4,7 +4,9 @@ A tool to read EEG data from GDF files and export as images using [Gramian Angul
 ## Setup
 
 ### Dependencies
-To install all dependencies run the following in your terminal:
+TS2Image was developed using Python 3.8.2, that you can download and install from [official site](https://www.python.org/downloads/).
+
+To install all third party dependencies run the following in your terminal:
 ```
 pip -r install requirements.txt
 ```
