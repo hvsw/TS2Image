@@ -10,13 +10,17 @@ pip -r install requirements.txt
 ```
 
 ### Configuration
-Set the directory containing the files you want to process:
-`input_folder = current_working_directory + "/datasets"`
+1. Set the directory containing the files you want to process:
+```
+input_folder = current_working_directory + "/datasets"
+```
 
-Set the root output folder:
-`output_folder = current_working_directory + '/images-output'`
+2. Set the root output folder:
+```
+output_folder = current_working_directory + '/images-output'
+```
 
-Create according to your dataset. For example, these are the events from some files in BCI IV competition dataset:
+3. Create according to your dataset. For example, these are the events from some files in BCI IV competition dataset:
 ```
 DESCRIPTION_EYES_OPEN = "276"
 DESCRIPTION_EYES_CLOSED = "277"
@@ -50,17 +54,20 @@ BCI_competition_dataset_events_dictionary = {
 }
 ```
 
-List of events from `events_dictionary` you want to export from your dataset:
-`valid_events_descriptions = [DESCRIPTION_CUE_LEFT, DESCRIPTION_CUE_RIGHT]`
+4. List of events from `events_dictionary` you want to export from your dataset:
+```
+valid_events_descriptions = [DESCRIPTION_CUE_LEFT, DESCRIPTION_CUE_RIGHT]
+```
 
-Start time window padding, in seconds. Negative values are accepted:
-`t_start = 0`
+5. Start time window padding, in seconds. Negative values are accepted:
+```
+t_start = 0
+```
 
-Time window length, in seconds:
-`duration = 4`
-
-Event identifiers we want to process:
-`valid_events_descriptions = ["769", "770"]`
+6. Time window length, in seconds:
+```
+duration = 4
+```
 
 # References
 [Encoding Time Series as Images for Visual Inspection and Classification Using Tiled Convolutional Neural Networks](https://aaai.org/ocs/index.php/WS/AAAIW15/paper/viewFile/10179/10251)
