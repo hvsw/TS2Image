@@ -1,4 +1,8 @@
 # TS2Image 🌠
+
+This is the implementation of my work presented in partial fulfillment of the requirements for the degree of Bachelor in Computer Engineering:
+[TS2Image: a software to convert EEG time series into images for training brain-computer interface convolutional neural networks](https://lume.ufrgs.br/handle/10183/235487)
+
 A tool to read EEG data from GDF files and export as images using [Gramian Angular Field](https://aaai.org/ocs/index.php/WS/AAAIW15/paper/viewFile/10179/10251) or [ERSP](https://sccn.ucsd.edu/~scott/pdf/ERSP93.pdf).
 
 ## Setup
